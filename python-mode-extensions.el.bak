@@ -1,0 +1,264 @@
+;;; epython.el --- Provides various extra utilities to python mode.
+
+;; Copyright (C) 2007  Emin Martinian
+
+;; Author: 2007  Emin Martinian
+;; Maintainer:   emin at alum dot mit dot edu 
+;; Created:      September 2007
+;; Keywords:     python languages oop
+
+(defconst epy-version "1.0"
+  "Current version of epython.el.")
+
+;; This software is provided as-is, without express or implied
+;; warranty.  Permission to use, copy, modify, distribute or sell this
+;; software, without fee, for any purpose and by any individual or
+;; organization, is hereby granted, provided that the above copyright
+;; notice and this paragraph appear in all copies.
+
+;;; Commentary:
+
+;; This provides extra macros and utilities for editing python programs.
+;; It is intended to be used in addition to python-mode.el.
+
+;;; INSTALLATION:
+
+;; To install do the following:
+;;
+;; 1. Drop this file into a directory on your load-path and
+;;    byte-compile it if desired. 
+;;
+;; 2. Autoload this file if desired.
+;;
+;; 3. If you want support for flymake-mode, do the following:
+;;
+;;    3A. Download and install pylint and its dependencies from logilab.
+;;
+;;    3B. Save the epylint.py script below somewhere appropriate. On
+;;        windows, you will also need to create a file called epylint.bat
+;;        that run python on epylint.py. The easist way to do this is make
+;;        epylint.bat contain the line
+;;
+;;            c:\Python25\python.exe c:\Python25\Scripts\epylint.py %*
+;;
+;;    3C. Make sure the epylint.bat file is in your path. On Windows, you
+;;        can do this by right-clicking on "My Computer", clicking on the
+;;        "Advanced" tab, clicking on the "Environment Variables" button,
+;;        selecting on the "Path" system variable, clicking edit, and
+;;        adding the appropriate directory such as "C:\Python25\Scripts".
+;;        Also, on windows you should make sure that the pylint.bat
+;;        script installed by pylint is correct (the default one may
+;;        have "python" instead of the full python executable path).
+
+;;;;;;;;;;;;;;;;;;;;;;  epylint.py script  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;#!/usr/bin/env python
+;;
+;;import re
+;;import sys
+;;
+;;from subprocess import *
+;;
+;;p = Popen(
+;;    "c:/Python25/Scripts/pylint.bat -f parseable -r n %s"%
+;;    sys.argv[1], shell = True, stdout = PIPE).stdout
+;;
+;;for line in p:
+;;    match = re.search("\\[([WECR])(, (.+?))?\\]", line)
+;;    if match:
+;;        kind = match.group(1)
+;;        func = match.group(3)
+;;
+;;        if kind in ["W","C","R"]:
+;;           msg = "Warning"
+;;        else:
+;;           msg = "Error"
+;;
+;;        if func:
+;;            line = re.sub("\\[([WECR])(, (.+?))?\\]",
+;;                          "%s (%s):" % (msg, func), line)
+;;        else:
+;;            line = re.sub("\\[([WECR])?\\]", "%s:" % msg, line)
+;;    print line,
+;;
+;;p.close()
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+
+;;; Code:
+
+
+;; user definable variables
+;; vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
+
+;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
+
+(require 'python-mode)
+
+(defun epy-set-pythonpath (path)
+  "Set the PYTHONPATH environment variable to the given PATH.
+
+   Settings this variable allows pylint to use the appropriate path
+   when checking modules. For example, if a module you want to 
+   check has a line like 
+
+     from foo import bar
+
+   you should set the PYTHONPATH to the directory that is the parent
+   of foo.
+  "
+  (interactive "D")
+  (setenv "PYTHONPATH" path))
+
+(defun epy-prepare-python-comment ()
+  "Insert a preformatted comment header for function at point.
+
+  When point is positioned on the line where a ''def'' statement begins and
+  you execute this command, a comment header will be inserted that lists
+  the inputs of your function, as well as a RETURNS field and a PURPOSE field.
+  "
+  (interactive)
+  (save-restriction
+    (push-mark (point)) (end-of-line) (setq line-end (point)) ; store line-end
+    (goto-char (mark)) ; go back to where we started
+    (search-forward "def " line-end) ; find function only if it is on this line
+    (set-mark (point)) ; set the mark to where the function def starts
+    (search-forward "(")
+    (setq funcName (buffer-substring-no-properties (mark) (point)))
+    (set-mark (point))
+    (search-forward "):")
+    (backward-char 2)    
+    (setq args (buffer-substring-no-properties (mark) (point)))
+    (end-of-line) 
+    (insert (format "\n        \"\"\"\n\n        INPUTS:\n\n" ))
+    (set-mark (point))
+    (setq argList (split-string (string-strip args) ","))
+    (mapcar (lambda (argName) (if (string-match "^self:?$" argName) nil
+	      (insert (format "        -- %s:        \n\n" argName)))) argList)
+    (insert (format "        %s\n\n        RETURNS:\n\n"
+		    "-------------------------------------------------------"))
+    (insert (format "        %s\n\n        PURPOSE:\n\n\"\"\"" 
+		    "-------------------------------------------------------"))
+    (next-line 1)
+    (push-mark (point))
+    (search-backward "\"\"\"")
+    (search-backward "\"\"\"")
+    (while (< (point) (mark))
+      (indent-for-tab-command)
+      (next-line 1))
+    (end-of-line)
+    (pop-mark)
+    (goto-char (mark))
+    (pop-mark)
+    )
+)
+    
+(defun epy-setup-my-epython-style ()
+  "Setup various keys for epython style"
+  (progn
+    (local-set-key "\C-cc" 'epy-prepare-python-comment)
+    (local-set-key "\C-c." 'epy-push-doctest-to-py)
+    (local-set-key "\C-cp" 'epy-go-py)
+    (local-set-key "\C-cP" 'epy-set-go-py-buffer)
+    (local-set-key "\C-c\C-p" 'epy-set-pythonpath)
+    )
+  )
+
+(defun epy-setup-py-shell-keys ()
+  "Setup various keys for use in the python shell."
+  (progn
+    (local-set-key "\C-cy" 'epy-pdb-pm)
+    (local-set-key "\C-ce" 'epy-analyze-doctest-error)
+    ))
+
+(add-hook 'python-mode-hook 'epy-setup-my-epython-style)
+(add-hook 'py-shell-hook 'epy-setup-py-shell-keys)
+
+;; Macro to compare expected and actual doctest results via ediff.
+;; This needs to be made into a real function at some point.
+(fset 'epy-analyze-doctest-error
+   [escape ?\C-s ?^ ?E ?x ?p ?e ?c ?t ?e ?d ?: ?$ ?\C-n ?\C-a ?\C-  escape ?\C-s ?^ ?G ?o ?t ?: ?\C-b ?\C-b ?\C-b ?\C-b ?\C-b ?\C-x ?r ?x ?1 ?\C-n ?\C-e ?\C-n ?\C-a ?\C-  ?\C-s ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?* ?\C-f ?\C-a ?\C-b ?\C-x ?r ?x ?2 ?\C-x ?1 ?\C-x ?2 ?\C-x ?b ?e ?x ?p ?e ?c ?t ?e ?d ?_ ?d ?o ?c ?t ?e ?s ?t return ?\C-x ?r ?g ?1 ?\C-x ?o ?\C-x ?b ?g ?o ?t ?_ ?d ?o ?c ?t ?e ?s ?t return ?\C-x ?r ?g ?2 escape ?x ?e ?d ?i ?f ?f ?- ?b ?u ?f ?f ?e ?r ?s return return return])
+
+(defun epy-pdb-pm ()
+  "Import pdb and invoke pdb.pm() to debug most recent python error in python shell"
+  (interactive)
+  (insert "import pdb; pdb.pm()")
+  (comint-send-input)
+)
+
+(defun epy-set-go-py-buffer ()
+  "Set the current buffer to be the my-main-py-buffer for the epy-go-py command"
+  (interactive)
+  (setq my-main-py-buffer (buffer-name))
+  (message (format "Main python buffer is now %s." my-main-py-buffer))
+)
+
+(defun epy-go-py () 
+  "Kill any existing python buffers and execute my-main-py-buffer in *Python*.
+
+  The purpose of this command is to run a python buffer as a script. This is
+  useful for buffers which execute their own doctests when executed or for
+  scripts which do other useful things. 
+
+  To set the target buffer, use the epy-set-go-py-buffer command.
+  "
+  (interactive)
+  (if (setq py-buffer (get-buffer "*Python*"))
+      (progn
+       (kill-buffer py-buffer) 
+       (while (or (get-process py-which-bufname) (get-process "Python<1>"))
+	 (message "Waiting for python to die, please be patient")
+	 (kill-process (get-process py-which-bufname)(get-process "Python<1>"))
+	 (list-processes) ; this seems to be necessary to clear processes
+	 (sleep-for 0 10)
+	 )))
+  (if (setq my-py-buf (get-buffer my-main-py-buffer))
+      (switch-to-buffer my-py-buf) (error "Must set my-main-py-buffer first."))
+  (delete-other-windows)
+  (message "Starting python...")
+  (py-shell)
+  (other-window 1)
+  (while (not (get-process py-which-bufname)) 
+    (message "Waiting for python to start")
+    (sleep 1)
+    )
+  (py-execute-buffer))
+
+(defun epy-push-doctest-to-py (numTimes) 
+  "Push the doctest line on the current line into python buffer.
+
+  This command is useful when you have a doctest that you want to step 
+  through manually. Put the point on the first line of the doctest,
+  start the python interpreter (usually C-c !), and execute this
+  command to push each line into the python buffer.
+  "
+  (interactive "p")
+  (while (> numTimes 0)
+    (beginning-of-line)
+    (forward-char 4)
+    (push-mark)
+    (end-of-line)
+    (copy-region-as-kill (mark) (point))
+    (pop-mark)
+    (next-line)
+    (beginning-of-line)
+    (other-window 1)
+    (yank)
+    (comint-send-input)
+    (other-window -1)
+    (setq numTimes (- numTimes 1))
+    )
+)
+  
+  
+(when (load "flymake" t)
+  (defun flymake-pylint-init ()
+    (let* ((temp-file (flymake-init-create-temp-buffer-copy
+		       'flymake-create-temp-inplace))
+           (local-file (file-relative-name
+                        temp-file
+                        (file-name-directory buffer-file-name))))
+      (list "epylint.bat" (list local-file))))
+  
+  (add-to-list 'flymake-allowed-file-name-masks
+               '("\\.py\\'" flymake-pylint-init)))
