@@ -47,11 +47,20 @@
   (interactive)
   (load-library "default"))
 
+(defun open-rsys ()
+  (interactive)
+  (find-file rsys))
+
+(defun open-todo ()
+  (interactive)
+  (find-file todo))
+
+
 (global-set-key [(f11)] 'goto-next-locus)
 
 (global-set-key [(f5)] 'revert-buffer)
 
-(global-set-key (kbd "M-<f5>") 'reload-dotemacs)
+(global-set-key [(f6)] 'reload-dotemacs)
 
 (global-set-key "\C-c#" 'comment-region)
 
@@ -67,9 +76,9 @@
 
 (global-set-key "\C-xp" 'python-mode)
 
-(global-set-key "\C-xt" '(find-file todo))
+(global-set-key "\C-xt" 'open-todo)
 
-(global-set-key [(f1)] '(find-file rsys))
+(global-set-key [(f1)] 'open-rsys)
 
 ;;;;;;;;;;;;;;;;
 
