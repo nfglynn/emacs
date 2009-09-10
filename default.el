@@ -9,7 +9,7 @@
   (unless (featurep 'emacsw32)
     (lwarn '(emacsw32) :error "Could not find emacsw32.el")))
 
-(defvar rsys "d:/p4/depot/Development/7.0/ReleaseSystem_Stabilization/Build/ReleaseSystem")
+(defvar rsys (getenv "RSYS"))
 
 (defvar todo "\\\\gin\\common\\forniall\\todo.org")
 
@@ -19,6 +19,9 @@
 
 (defun python-insert-pdb-settrace ()
   (interactive)
+  (insert "import pdb")
+  (indent-for-tab-command)
+  (newline-and-indent)
   (insert "pdb.set_trace()"))
 
 (global-set-key "\M-p" 'python-insert-pdb-settrace)
@@ -51,16 +54,32 @@
   (interactive)
   (find-file rsys))
 
+(open-rsys)
+
 (defun open-todo ()
   (interactive)
   (find-file todo))
 
+(defun explore-here ()
+  (interactive)
+  (shell-command "start .")
+  (message (format "Exploring %s" (replace-regexp-in-string "Directory " "" (pwd)))))
 
-(global-set-key [(f11)] 'goto-next-locus)
+(global-set-key [(f1)] 'open-rsys)
+
+(global-set-key [(f2)] 'explore-here)
 
 (global-set-key [(f5)] 'revert-buffer)
 
 (global-set-key [(f6)] 'reload-dotemacs)
+
+(global-set-key [(f7)] 'python-describe-symbol)
+
+(global-set-key [(f11)] 'goto-next-locus)
+
+(global-set-key [(f12)] 'ibuffer)
+
+(global-set-key [(meta f12)] 'recentf-open-files)
 
 (global-set-key "\C-c#" 'comment-region)
 
@@ -78,7 +97,10 @@
 
 (global-set-key "\C-xt" 'open-todo)
 
-(global-set-key [(f1)] 'open-rsys)
+(global-set-key "\M-r" 'replace-string)
+
+(global-set-key "\C-x\M-r" 'replace-regexp)
+
 
 ;;;;;;;;;;;;;;;;
 
@@ -91,6 +113,8 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 (windmove-default-keybindings)
 (setq scroll-step 1)
+(which-function-mode 1)
+(show-paren-mode 1)
 
 ; Font and Appearance
 (set-default-font "-outline-Consolas-normal-r-normal-normal-12-97-96-96-c-*-iso8859-1")
@@ -98,12 +122,31 @@
 (require 'color-theme)
 (require 'htmlfontify)
 
+(defun change-color ()
+  (progn (color-theme-select)
+	 (color-theme-ld-dark)
+	 (kill-this-buffer)))
+
+(change-color)
+
+(setq inhibit-startup-echo-area-message t)                                      
+(setq initial-scratch-message nil)                                              
+(setq inhibit-splash-screen t)                                                  
+(setq inhibit-startup-message t) 
+
 ; Luddite Mode
 (tool-bar-mode -1) 
 (menu-bar-mode -1)
 (scroll-bar-mode -1)
 (menu-bar-showhide-fringe-menu-customize-disable)
 (blink-cursor-mode -1)
+
+(defadvice kill-new (before kill-new-push-xselection-on-kill-ring activate)
+  "Before putting new kill onto the kill-ring, add the clipboard/external selection to the kill ring"
+  (let ((have-paste (and interprogram-paste-function
+                         (funcall interprogram-paste-function))))
+    (when have-paste (push have-paste kill-ring))))
+
 
 ; file types
 (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
@@ -121,6 +164,11 @@
             (buffer-name))))
 
 ; Org-Mode
+(org-remember-insinuate)
+(setq org-directory "C:\\Users\\niall\\Notes")
+(setq org-default-notes-file (concat org-directory "\\notes.org"))
+(define-key global-map "\C-cr" 'org-remember)
+
 (require 'org-export-latex)
 (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 (global-set-key "\C-cl" 'org-store-link)
@@ -128,7 +176,11 @@
 (add-hook 'org-mode-hook 'turn-on-font-lock)  ; org-mode buffers only
 
 ; Fix grep-find
-(setq grep-find-command "find . -exec grep -nH -e '?' {} ; -print")
+(setq grep-find-command "find . -noleaf -type f -exec grep -nHiIs -e '?' {} ; -print")
+
+(setq python-python-command-args '())
+
+
 
 ;Haskell-mode
 (load "haskell-mode/haskell-site-file")
@@ -165,7 +217,7 @@
 (recentf-mode 1)
 (setq recentf-max-saved-items 500)
 (setq recentf-max-menu-items 60)
-(global-set-key [(meta f12)] 'recentf-open-files)
+
 
 ;; save a list of open files in ~/.emacs.desktop
 ;; save the desktop file automatically if it already exists
@@ -200,8 +252,6 @@
 (setq ibuffer-sorting-mode 'recency)
 (setq ibuffer-use-header-line t)
 
-(global-set-key [(f12)] 'ibuffer)
-
 (when (require 'bubble-buffer nil t)
   (global-set-key [f11] 'bubble-buffer-next)
   (global-set-key [(shift f11)] 'bubble-buffer-previous))
@@ -217,3 +267,4 @@
       (save-buffer)
       (kill-buffer (current-buffer)))))
 (global-set-key [(super f10)] 'xsteve-save-current-directory)
+
