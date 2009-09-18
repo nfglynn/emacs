@@ -3,6 +3,13 @@
 ;load-path
 (setq load-path (cons "C:/Program Files/Emacs/site-lisp/w3m" load-path))
 
+
+(add-hook 'ido-setup-hook
+	  (lambda ()
+	    (setq ido-enable-flex-matching t)))
+
+(ido-mode)
+
 ;; Load emacsw32 if found.
 (progn
   (require 'emacsw32 nil t)
@@ -17,6 +24,11 @@
   (interactive)
   (insert (replace-regexp-in-string "Directory " "" (pwd))))
 
+(defun format-for-confluence ()
+  (interactive)
+  (replace-regexp "^[ 	]*" "| (x) | " nil (region-beginning) (region-end))
+  (replace-regexp "$" " | |" nil (region-beginning) (region-end)))
+
 (defun python-insert-pdb-settrace ()
   (interactive)
   (insert "import pdb")
@@ -25,6 +37,14 @@
   (insert "pdb.set_trace()"))
 
 (global-set-key "\M-p" 'python-insert-pdb-settrace)
+
+;; (defun pylint ()
+;;   (interactive)
+;;   (shell-command (format "pylint -e %s" (buffer-file-name))))
+
+(setq python-check-command "pylint -e")
+;; (add-hook 'python-mode-hook '(lambda () (define-key python-mode-map "\C-xc" 'pylint)))
+(add-hook 'python-mode-hook '(lambda () (define-key python-mode-map "\C-m" 'newline-and-indent)))
 
 (defun dotemacs ()
   (interactive)
@@ -35,13 +55,13 @@
   (let ((regex ".*\\.\\(py\\|txt\\|build\\)")
 	(exe "C:\\cygwin\\bin\\find"))
     (grep-find
-     (format "%s %S -regex %S -exec grep -nH -e '%s' {} ; -print" exe rsys regex token))))
+     (format "%s %S -regex %S -noleaf -type f -exec grep -nHiIs -e '%s' {} ; -print" exe rsys regex token))))
 
 (defun find-file-rsys (pattern)
   (interactive "SSearch RSYS for File Named:")
   (let ((exe "C:\\cygwin\\bin\\find"))
     (grep-find
-      (format "%s %S -name \"*%S*.py\" -print " exe rsys pattern))))
+      (format "%s %S -name \"*%S*.py\" -noleaf -type f -print " exe rsys pattern))))
 
 (defun word-count nil "Count words in buffer" (interactive)
   (shell-command-on-region (point-min) (point-max) "wc -w"))
@@ -54,7 +74,7 @@
   (interactive)
   (find-file rsys))
 
-(open-rsys)
+;;(open-rsys)
 
 (defun open-todo ()
   (interactive)
@@ -178,7 +198,8 @@
 ; Fix grep-find
 (setq grep-find-command "find . -noleaf -type f -exec grep -nHiIs -e '?' {} ; -print")
 
-(setq python-python-command-args '())
+; Fix Python startup
+; (setq python-python-command-args '())
 
 
 
@@ -205,6 +226,8 @@
 
 ;; Steve Yegge Stuff
 
+(setq delete-old-versions t)
+
 ;; Enable backup files.
 (setq make-backup-files t)
 ;; Enable versioning with default values
@@ -212,22 +235,20 @@
 ;; Save all backup file in this directory.
 (setq backup-directory-alist (quote ((".*" . "~/.emacs_backups/"))))
 
-;;recentf
-(require 'recentf)
-(recentf-mode 1)
-(setq recentf-max-saved-items 500)
-(setq recentf-max-menu-items 60)
+;; ;;recentf
+;; (require 'recentf)
+;; (recentf-mode 1)
+;; (setq recentf-max-saved-items 500)
+;; (setq recentf-max-menu-items 60)
 
 
 ;; save a list of open files in ~/.emacs.desktop
 ;; save the desktop file automatically if it already exists
-;; (setq desktop-save 'if-exists)
-;; (desktop-save-mode 1)
-
-;; ;; load the desktop on startup
-;; (desktop-load-default)
-;; ;; automatically save the desktop on exit.
-;; (setq desktop-enable t) 
+(desktop-save-mode 1)
+;; ;; ;; load the desktop on startup
+;;(desktop-load-default)
+;; ;; ;; automatically save the desktop on exit.
+(setq desktop-enable t) 
 
 
 ;; save a bunch of variables to the desktop file
@@ -257,14 +278,14 @@
   (global-set-key [(shift f11)] 'bubble-buffer-previous))
 (setq bubble-buffer-omit-regexp "\\(^ .+$\\|\\*Messages\\*\\|*compilation\\*\\|\\*.+output\\*$\\|\\*TeX Help\\*$\\|\\*vc-diff\\*\\|\\*Occur\\*\\|\\*grep\\*\\|\\*cvs-diff\\*\\)")
 
-(defun xsteve-save-current-directory ()
-  "Save the current directory to the file ~/.emacs.d/current-directory"
-  (interactive)
-  (let ((dir default-directory))
-    (with-current-buffer (find-file-noselect "~/.emacs.d/current-directory")
-      (delete-region (point-min) (point-max))
-      (insert (concat dir "\n"))
-      (save-buffer)
-      (kill-buffer (current-buffer)))))
-(global-set-key [(super f10)] 'xsteve-save-current-directory)
+;; (defun xsteve-save-current-directory ()
+;;   "Save the current directory to the file ~/.emacs.d/current-directory"
+;;   (interactive)
+;;   (let ((dir default-directory))
+;;     (with-current-buffer (find-file-noselect "~/.emacs.d/current-directory")
+;;       (delete-region (point-min) (point-max))
+;;       (insert (concat dir "\n"))
+;;       (save-buffer)
+;;       (kill-buffer (current-buffer)))))
+;; (global-set-key [(super f10)] 'xsteve-save-current-directory)
 
