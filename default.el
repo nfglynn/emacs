@@ -3,11 +3,9 @@
 ;load-path
 (setq load-path (cons "C:/Program Files/Emacs/site-lisp/w3m" load-path))
 
-
 (add-hook 'ido-setup-hook
 	  (lambda ()
 	    (setq ido-enable-flex-matching t)))
-
 (ido-mode)
 
 ;; Load emacsw32 if found.
@@ -24,10 +22,14 @@
   (interactive)
   (insert (replace-regexp-in-string "Directory " "" (pwd))))
 
-(defun format-for-confluence ()
+(defun confluence-listify ()
   (interactive)
   (replace-regexp "^[ 	]*" "| (x) | " nil (region-beginning) (region-end))
   (replace-regexp "$" " | |" nil (region-beginning) (region-end)))
+
+(defun confluence-linkify-jira-keys ()
+  (interactive)
+  (replace-regexp "[HTCER]..-[0-9]*" "[\\&|http://jira.dub.havok.com/browse/\\&]" nil (region-beginning) (region-end)))
 
 (defun python-insert-pdb-settrace ()
   (interactive)
@@ -42,9 +44,44 @@
 ;;   (interactive)
 ;;   (shell-command (format "pylint -e %s" (buffer-file-name))))
 
+(require 'goto-last-change)
+
+
 (setq python-check-command "pylint -e")
 ;; (add-hook 'python-mode-hook '(lambda () (define-key python-mode-map "\C-xc" 'pylint)))
 (add-hook 'python-mode-hook '(lambda () (define-key python-mode-map "\C-m" 'newline-and-indent)))
+
+;; ;;; Electric Pairs
+;; (add-hook 'python-mode-hook
+;;      (lambda ()
+;;       (define-key python-mode-map "\"" 'electric-pair)
+;;       (define-key python-mode-map "\'" 'electric-pair)
+;;       (define-key python-mode-map "(" 'electric-pair)
+;;       (define-key python-mode-map "[" 'electric-pair)
+;;       (define-key python-mode-map "{" 'electric-pair)))
+
+;; (defun electric-pair ()
+;;   "Insert character pair without sournding spaces"
+;;   (interactive)
+;;   (let (parens-require-spaces)
+;;     (insert-pair)))
+
+(setq python-python-command "ipython")
+
+(defvar ipython-completion-command-string
+  "print(';'.join(__IP.Completer.all_completions('%s'))) #PYTHON-MODE SILENT\n"
+  "The string send to ipython to query for all possible completions")
+
+(defadvice py-execute-buffer (around python-keep-focus activate)
+  "return focus to python code buffer"
+  (save-excursion ad-do-it))
+
+;; (require 'pymacs)
+
+;; (pymacs-load "ropemacs" "rope-")
+
+;; (provide 'python-programming)
+
 
 (defun dotemacs ()
   (interactive)
@@ -61,7 +98,7 @@
   (interactive "SSearch RSYS for File Named:")
   (let ((exe "C:\\cygwin\\bin\\find"))
     (grep-find
-      (format "%s %S -name \"*%S*.py\" -noleaf -type f -print " exe rsys pattern))))
+      (format "%s %S -iname \"*%S*.py\" -noleaf -type f -print " exe rsys pattern))))
 
 (defun word-count nil "Count words in buffer" (interactive)
   (shell-command-on-region (point-min) (point-max) "wc -w"))
@@ -74,8 +111,6 @@
   (interactive)
   (find-file rsys))
 
-;;(open-rsys)
-
 (defun open-todo ()
   (interactive)
   (find-file todo))
@@ -85,9 +120,46 @@
   (shell-command "start .")
   (message (format "Exploring %s" (replace-regexp-in-string "Directory " "" (pwd)))))
 
+(defun cmd-here ()
+  (interactive)
+  (shell-command "start cmd .")
+  (message (format "Cmding %s" (replace-regexp-in-string "Directory " "" (pwd)))))
+
+(defun nuke-all-buffers ()
+  "kill all buffers, leaving *scratch* only"
+  (interactive)
+  (mapcar (lambda (x) (kill-buffer x))
+	  (buffer-list))
+  (delete-other-windows))
+
+(defun uniquify-all-lines-region (start end)
+    "Find duplicate lines in region START to END keeping first occurrence."
+    (interactive "*r")
+    (save-excursion
+      (let ((end (copy-marker end)))
+        (while
+            (progn
+              (goto-char start)
+              (re-search-forward "^\\(.*\\)\n\\(\\(.*\n\\)*\\)\\1\n" end t))
+          (replace-match "\\1\n\\2")))))
+  
+(defun uniquify-all-lines-buffer ()
+    "Delete duplicate lines in buffer and keep first occurrence."
+    (interactive "*")
+    (uniquify-all-lines-region (point-min) (point-max)))
+
+; make file name and computer title
+(set-default 'frame-title-format 
+  (list "" "emacs" "@" (getenv "HOSTNAME") " : %f" ))
+
+(setq ansi-color-for-comint-mode t)
+
+(setq visible-bell t)
+
 (global-set-key [(f1)] 'open-rsys)
 
 (global-set-key [(f2)] 'explore-here)
+(global-set-key [(meta f2)] 'cmd-here)
 
 (global-set-key [(f5)] 'revert-buffer)
 
@@ -125,6 +197,23 @@
 ;;;;;;;;;;;;;;;;
 
 
+(defadvice kill-ring-save (before slick-copy activate compile) "When called
+  interactively with no active region, copy a single line instead."
+  (interactive (if mark-active (list (region-beginning) (region-end)) (message
+  "Copied line") (list (line-beginning-position) (line-beginning-position
+  2)))))
+
+(defadvice kill-region (before slick-cut activate compile)
+  "When called interactively with no active region, kill a single line instead."
+  (interactive
+    (if mark-active (list (region-beginning) (region-end))
+      (list (line-beginning-position)
+        (line-beginning-position 2)))))
+
+
+(setq focus-follows-mouse t)
+(setq mouse-autoselect-window t)
+
 ;; General and mode specific settings
 
 (global-font-lock-mode 1)
@@ -138,6 +227,7 @@
 
 ; Font and Appearance
 (set-default-font "-outline-Consolas-normal-r-normal-normal-12-97-96-96-c-*-iso8859-1")
+(add-to-list 'default-frame-alist '(font . "-outline-Consolas-normal-r-normal-normal-12-97-96-96-c-*-iso8859-1"))
 (setq-default truncate-partial-width-windows nil)
 (require 'color-theme)
 (require 'htmlfontify)
@@ -171,6 +261,7 @@
 ; file types
 (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 (add-to-list 'auto-mode-alist '("\\.build\\'" . python-mode))
+(add-to-list 'auto-mode-alist '("\\.mapping\\'" . python-mode))
 (add-to-list 'auto-mode-alist '("\\.vcproj\\'" . xml-mode))
 (add-to-list 'auto-mode-alist '("\\.csproj\\'" . xml-mode))
 
@@ -199,7 +290,7 @@
 (setq grep-find-command "find . -noleaf -type f -exec grep -nHiIs -e '?' {} ; -print")
 
 ; Fix Python startup
-; (setq python-python-command-args '())
+(setq python-python-command-args '())
 
 
 
@@ -289,3 +380,14 @@
 ;;       (kill-buffer (current-buffer)))))
 ;; (global-set-key [(super f10)] 'xsteve-save-current-directory)
 
+;; macros
+
+(setq confluence-list
+   [?\M-x ?r ?p ?l ?e ?\C-? ?\C-? ?\C-? ?e ?p ?l ?a ?c ?e ?- ?r ?e ?g ?e ?x ?p ?\C-m ?^ ?  ?* ?\C-m ?\C-m ?\M-< ?\M-x ?p ?l ?r ?e ?- ?\C-? ?\C-? ?\C-? ?\C-? ?\C-? ?r ?e ?p ?l ?a ?c ?e ?- ?r ?e ?g ?e ?x ?p ?\C-m ?^ ?\C-m ?| ?  ?\( ?x ?\) ?  ?| ?  ?\C-m ?\M-< ?\M-x ?r ?e ?p ?l ?a ?c ?e ?- ?r ?e ?g ?e ?x ?p ?\C-m ?$ ?\C-m ?\S-  ?| ?  ?|])
+
+(require 'ansi-color)
+(require 'eshell)
+(defun eshell-handle-ansi-color ()
+  (ansi-color-apply-on-region eshell-last-output-start
+			      eshell-last-output-end))
+(add-to-list 'eshell-output-filter-functions 'eshell-handle-ansi-color)
