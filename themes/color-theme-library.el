@@ -11990,7 +11990,7 @@ its default 80x25 state -- dark grey on black."
   (interactive)
   (color-theme-install
    '(color-theme-charcoal-black
-     ((background-color . "Grey15")
+     ((background-color . "Grey9")
       (background-mode . dark)
       (border-color . "Grey")
       (cursor-color . "Grey")
@@ -12015,7 +12015,7 @@ its default 80x25 state -- dark grey on black."
       (tags-tag-face . default)
       (view-highlight-face . highlight)
       (widget-mouse-face . highlight))
-     (default ((t (:stipple nil :background "Grey15" :foreground "Grey" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 87 :width semi-condensed :family "misc-fixed"))))
+     (default ((t (:stipple nil :background "Grey9" :foreground "Grey" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 87 :width semi-condensed :family "misc-fixed"))))
      (Info-title-1-face ((t (:bold t :weight bold :family "helv" :height 1.728))))
      (Info-title-2-face ((t (:bold t :family "helv" :weight bold :height 1.44))))
      (Info-title-3-face ((t (:bold t :weight bold :family "helv" :height 1.2))))

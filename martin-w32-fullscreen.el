@@ -10,7 +10,7 @@
 (defvar w32-fullscreen-python-cmd "python"
   "Path to python executable")
 (defvar w32-fullscreen-toggletitle-cmd
-   "C:/Program Files/Emacs/site-lisp/w32toggletitle.py"
+   "C:/Program Files (x86)/Emacs/site-lisp/w32toggletitle.py"
    "Path to w32toggletitle.py")
 
 ;; ------ code -----

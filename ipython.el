@@ -133,7 +133,7 @@
 (require 'executable)
 (require 'ansi-color)
 
-(defcustom ipython-command "ipython"
+(defcustom ipython-command "ipython -i"
   "*Shell command used to start ipython."
   :type 'string
   :group 'python)
@@ -159,6 +159,16 @@ command after it. The first match group is for a command that is rewritten,
 the second for a 'normal' command, and the third for a multiline command.")
 (defvar ipython-de-output-prompt-regexp "^Out\\[[0-9]+\\]: "
   "A regular expression to match the output prompt of IPython.")
+
+(defvar py-shell-map nil
+  "Keymap used in *Python* shell buffers.")
+(if py-shell-map
+    nil
+  (setq py-shell-map (copy-keymap comint-mode-map))
+  (define-key py-shell-map [tab]   'tab-to-tab-stop)
+  (define-key py-shell-map "\C-c-" 'py-up-exception)
+  (define-key py-shell-map "\C-c=" 'py-down-exception)
+  )
 
 
 (if (not (executable-find ipython-command))
@@ -310,8 +320,9 @@ gets converted to:
       (while (re-search-forward ipython-de-output-prompt-regexp end t)
         (replace-match "" t nil)))))
 
+;;  "print ';'.join(__IP.Completer.all_completions('%s')) #PYTHON-MODE SILENT\n"
 (defvar ipython-completion-command-string
-  "print ';'.join(__IP.Completer.all_completions('%s')) #PYTHON-MODE SILENT\n"
+ "print(';'.join(__IP.Completer.all_completions('%s')))\n" 
   "The string send to ipython to query for all possible completions")
 
 
@@ -366,8 +377,14 @@ in the current *Python* session."
                (insert completion))
               (t
                (message "Making completion list...")
-               (with-output-to-temp-buffer "*Python Completions*"
-                 (display-completion-list (all-completions pattern completion-table)))
+	       ;; (with-output-to-temp-buffer "*IPython Completions*"
+	       ;;   (display-completion-list (all-completions pattern completion-table)))
+	       (let* ((dotposition (- (length pattern ) (length (first (last (split-string pattern "[\.]")) ) ) ))
+		      (ido-ipython-selection  (ido-completing-read (concat  "Choose a completion: " pattern)
+								   (mapcar (lambda (x) (substring x dotposition))
+									   (all-completions pattern completion-table)))))
+  (delete-char (- dotposition (length pattern)))
+  (insert ido-ipython-selection))
                (message "Making completion list...%s" "done")))))
   ;; emacs
   (defun ipython-complete ()

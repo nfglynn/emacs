@@ -1,0 +1,11 @@
+syntax: glob
+Debug/
+Release/
+emacs_fullscreen/Debug/
+emacs_fullscreen/Release/
+*.suo
+*.sdf
+*.vcxproj.user
+*.aps
+*.opensdf
+.hgignore~

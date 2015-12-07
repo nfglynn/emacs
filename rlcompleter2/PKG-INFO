@@ -1,0 +1,17 @@
+Metadata-Version: 1.0
+Name: rlcompleter2
+Version: 0.96
+Summary: module for readline interactive completion
+Home-page: 0.96
+Author: holger krekel
+Author-email: hpk@trillke.net
+License: MIT License
+Description: rlcompleter2 is an interactive readline completion handler, featuring:
+        * completion on any python expression/statement
+        * interactive introspection into function signatures and docstrings
+        * convenient completions on module, instance and function objects
+        * ultra simple user interface: <tab> (try hit it multiple times!)
+        
+Platform: unix
+Platform: linux
+Platform: cygwin

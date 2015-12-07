@@ -1,0 +1,70 @@
+HOW TO USE
+
+* Add the following lines to your .emacs file:
+  (defun toggle-full-screen () (interactive) (shell-command "emacs_fullscreen.exe"))
+  (global-set-key [f11] 'toggle-full-screen)
+* Compile main.c (or download compiled EXE from https://bitbucket.org/alexander_manenko/emacs-fullscreen-win32/downloads/emacs_fullscreen.zip) and copy EXE file to the folder in your PATH (I use C:\Windows\system32).
+* Now run Emacs and press F11 to switch into full-screen mode. Press F11 again to switch to windowed mode.
+
+
+This will not hide menu-bar, tool-bar, and scroll-bar. If you want to hide them forever, then use this code:
+     (menu-bar-mode -1)
+     (tool-bar-mode -1)
+     (scroll-bar-mode -1)
+
+
+If you want to start Emacs in full-screen mode then put call to `toggle-full-screen` function into your .emacs file:
+ (toggle-full-screen)
+
+
+If you want to hide menu-bar, tool-bar, and scroll-bar in full-screen mode and restore them in windowed mode then use this code:
+   (defun toggle-full-screen ()
+     "Toggles full-screen mode for Emacs window on Win32."
+     (interactive)
+     (shell-command "emacs_fullscreen.exe"))
+
+   (defun toggle-bars ()
+     "Toggles bars visibility."
+     (interactive)
+     (menu-bar-mode)
+     (tool-bar-mode)
+     (scroll-bar-mode))
+
+   (defun toggle-full-screen-and-bars ()
+     "Toggles full-screen mode and bars."
+     (interactive)
+     (toggle-bars)
+     (toggle-full-screen))
+
+   (global-set-key [f11] 'toggle-full-screen-and-bars)
+
+
+Here is a part of my .emacs file. Emacs will start in full-screen mode. Menu-bar, tool-bar, and scroll-bar are visible in windowed mode (and are invisible in full-screen mode):
+;; Hide splash-screen and startup-message
+(setq inhibit-splash-screen t)
+(setq inhibit-startup-message t)
+
+(defun toggle-full-screen ()
+  "Toggles full-screen mode for Emacs window on Win32."
+  (interactive)
+  (shell-command "emacs_fullscreen.exe"))
+
+(defun toggle-bars ()
+  "Toggles bars visibility."
+  (interactive)
+  (menu-bar-mode)
+  (tool-bar-mode)
+  (scroll-bar-mode))
+
+(defun toggle-full-screen-and-bars ()
+  "Toggles full-screen mode and bars."
+  (interactive)
+  (toggle-bars)
+  (toggle-full-screen))
+
+;; Use F11 to switch between windowed and full-screen modes
+(global-set-key [f11] 'toggle-full-screen-and-bars)
+
+;; Switch to full-screen mode during startup
+(toggle-full-screen-and-bars)
+

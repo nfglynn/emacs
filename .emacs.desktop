@@ -1,0 +1,46 @@
+;; -*- mode: emacs-lisp; coding: emacs-mule; -*-
+;; --------------------------------------------------------------------------
+;; Desktop File for Emacs
+;; --------------------------------------------------------------------------
+;; Created Thu Dec 18 12:42:15 2014
+;; Desktop file format version 206
+;; Emacs version 24.3.1
+
+;; Global section:
+(setq extended-command-history '("dotemacs" "head" "persp-mode"))
+(setq file-name-history nil)
+(setq grep-history nil)
+(setq compile-history nil)
+(setq minibuffer-history '("c:/emacs/site-lisp/emacs/"))
+(setq query-replace-history nil)
+(setq read-expression-history nil)
+(setq regexp-history nil)
+(setq regexp-search-ring nil)
+(setq search-ring nil)
+(setq shell-command-history nil)
+(setq tags-file-name nil)
+(setq register-alist nil)
+
+;; Buffer section -- buffers listed in same order as in buffer list:
+(desktop-create-buffer 206
+  "c:/emacs/site-lisp/emacs/default.el"
+  "default.el"
+  'emacs-lisp-mode
+  '(helm-mode persp-mode)
+  21140
+  '(1 nil)
+  nil
+  nil
+  '((buffer-file-coding-system . undecided-dos)))
+
+(desktop-create-buffer 206
+  nil
+  "ReleaseSystem"
+  'dired-mode
+  '(helm-mode persp-mode)
+  279
+  '(nil nil)
+  t
+  '("d:/p4/Development/HEAD/Build/ReleaseSystem/")
+  nil)
+
